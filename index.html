@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>С 10-летием, Марк!</title>
+<style>
+  html,body{margin:0;height:100%;overflow:hidden}
+  body{
+    background-color:#0d3478;
+    background-image:linear-gradient(rgba(255,255,255,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.07) 1px,transparent 1px);
+    background-size:24px 24px;
+    font-family:'Courier New',Courier,monospace;color:#fff;
+  }
+  .center{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;z-index:2;pointer-events:none}
+  .badge{width:130px;height:130px;line-height:130px;border:4px solid #fff;border-radius:50%;font-size:72px;font-weight:bold;background:#0d3478}
+  h1{font-size:clamp(28px,6vw,48px);margin:20px 0 8px;letter-spacing:1px;text-shadow:0 2px 0 #0a2a5e}
+  p{margin:0;font-size:clamp(16px,3vw,22px);color:#ffd84d;letter-spacing:2px;background:#0d3478;padding:2px 8px}
+  .score{position:fixed;top:12px;right:12px;z-index:3;background:#0d3478;border:2px solid #fff;padding:8px 14px;font-size:clamp(14px,3vw,20px);letter-spacing:2px;color:#d6e6ff;text-align:right}
+  .score b{color:#ffd84d;font-size:1.5em;display:inline-block}
+  .score b.bump{animation:bump .25s ease-out}
+  @keyframes bump{50%{transform:scale(1.5)}}
+  .toast{position:fixed;top:30%;left:0;width:100%;text-align:center;z-index:3;pointer-events:none;font-size:clamp(22px,5vw,40px);font-weight:bold;color:#ffd84d;text-shadow:0 2px 0 #0a2a5e;opacity:0}
+  .toast.show{animation:toast 2.2s ease-out}
+  @keyframes toast{0%{opacity:0;transform:scale(.6)}15%{opacity:1;transform:scale(1.1)}80%{opacity:1}100%{opacity:0}}
+  .hint{position:fixed;bottom:16px;width:100%;text-align:center;font-size:14px;color:#d6e6ff;z-index:2;letter-spacing:2px}
+
+  .balloon{
+    position:fixed;bottom:-220px;cursor:pointer;z-index:1;animation:rise linear forwards;
+  }
+  .balloon svg{display:block;width:100%;height:100%;overflow:visible}
+  @keyframes rise{
+    0%{transform:translate(0,0) rotate(-4deg)}
+    50%{transform:translate(var(--sway),-60vh) rotate(5deg)}
+    100%{transform:translate(0,-130vh) rotate(-4deg)}
+  }
+  .pop{animation:pop .2s ease-out forwards!important}
+  @keyframes pop{to{transform:scale(1.6);opacity:0}}
+
+  @media (prefers-reduced-motion:reduce){
+    .balloon{animation:none;bottom:auto}
+  }
+</style>
+</head>
+<body>
+  <div class="center">
+    <div class="badge">10</div>
+    <h1>С ДНЁМ РОЖДЕНИЯ, МАРК!</h1>
+    <p>// СЮРПРИЗ РАЗБЛОКИРОВАН //</p>
+  </div>
+  <div class="score">ЛОПНУЛО: <b id="score">0</b></div>
+  <div class="toast" id="toast"></div>
+  <div class="hint">НАЖИМАЙ НА ШАРИКИ, ЧТОБЫ ИХ ЛОПНУТЬ</div>
+
+<script>
+  var colors=['#ff4d4d','#ffd84d','#4dd2ff','#7dff6b','#ff7bd5','#ffa534'];
+  var reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  var shine='<ellipse cx="32" cy="28" rx="7" ry="12" fill="#fff" opacity=".45" transform="rotate(25 32 28)"/>';
+  // Each shape is drawn in a 100x140 box: body in the top 92, string below.
+  var shapes=[
+    function(c){return '<ellipse cx="50" cy="48" rx="40" ry="48" fill="'+c+'"/><path d="M44 98 L56 98 L50 90Z" fill="'+c+'"/>'+shine},
+    function(c){return '<circle cx="50" cy="48" r="44" fill="'+c+'"/><path d="M44 98 L56 98 L50 90Z" fill="'+c+'"/>'+shine},
+    function(c){return '<path d="M50 92 C10 62 6 30 28 16 C40 8 50 16 50 26 C50 16 60 8 72 16 C94 30 90 62 50 92Z" fill="'+c+'"/>'+shine},
+    function(c){return '<polygon points="50,2 62,35 97,36 69,58 79,93 50,72 21,93 31,58 3,36 38,35" fill="'+c+'"/>'},
+    function(c){return '<polygon points="50,2 92,47 50,92 8,47" fill="'+c+'"/>'+shine},
+    // Mountain
+    function(c){return '<polygon points="50,4 97,92 3,92" fill="#2f7a6d"/><polygon points="50,4 67,36 57,29 50,40 43,29 33,36" fill="#fff"/>'},
+    // Globe
+    function(c){return '<circle cx="50" cy="48" r="44" fill="#2a8ae0"/><path d="M28 24 C40 14 52 22 46 34 C40 44 24 40 20 52 C14 40 18 30 28 24Z M60 52 C72 46 84 54 78 68 C72 80 58 76 60 52Z" fill="#5bc26a"/><ellipse cx="32" cy="26" rx="6" ry="10" fill="#fff" opacity=".35" transform="rotate(25 32 26)"/>'},
+    // Robot
+    function(c){return '<line x1="50" y1="6" x2="50" y2="20" stroke="#fff" stroke-width="3"/><circle cx="50" cy="6" r="5" fill="#ff4d4d"/><rect x="10" y="20" width="80" height="70" rx="16" fill="'+c+'"/><circle cx="34" cy="48" r="11" fill="#fff"/><circle cx="66" cy="48" r="11" fill="#fff"/><circle cx="34" cy="48" r="5" fill="#0a2a5e"/><circle cx="66" cy="48" r="5" fill="#0a2a5e"/><rect x="30" y="68" width="40" height="8" rx="4" fill="#0a2a5e"/>'}
+  ];
+
+  var score=0,scoreEl=document.getElementById('score'),toastEl=document.getElementById('toast');
+  var milestones={10:'10 ИЗ 10! 🎉',25:'ТОЧНОСТЬ РОБОТА! 🤖',50:'ВЕРШИНА ПОКОРЕНА! 🏔️',100:'ЧЕМПИОН МИРА! 🌍'};
+  function addPoint(){
+    score++;
+    scoreEl.textContent=score;
+    scoreEl.classList.remove('bump');void scoreEl.offsetWidth;scoreEl.classList.add('bump');
+    if(milestones[score]){
+      toastEl.textContent=milestones[score];
+      toastEl.classList.remove('show');void toastEl.offsetWidth;toastEl.classList.add('show');
+    }
+  }
+
+  function launch(){
+    var b=document.createElement('div');
+    var c=colors[Math.floor(Math.random()*colors.length)];
+    b.className='balloon';
+    b.style.left=(Math.random()*92)+'vw';
+    b.style.setProperty('--sway',(Math.random()*80-40)+'px');
+    var d=7+Math.random()*6;
+    b.style.animationDuration=d+'s';
+    var s=0.7+Math.random()*0.7;
+    b.style.width=(70*s)+'px';b.style.height=(98*s)+'px';
+    var shape=shapes[Math.floor(Math.random()*shapes.length)];
+    b.innerHTML='<svg viewBox="0 0 100 140" aria-hidden="true">'+
+      '<line x1="50" y1="92" x2="50" y2="140" stroke="#fff" stroke-opacity=".7" stroke-width="1.5"/>'+
+      shape(c)+'</svg>';
+    b.onclick=function(){
+      if(b.classList.contains('pop'))return;
+      b.classList.add('pop');setTimeout(function(){b.remove()},200);
+      addPoint();
+    };
+    b.addEventListener('animationend',function(){b.remove()});
+    document.body.appendChild(b);
+  }
+
+  // Big burst on arrival, then a steady trickle
+  var n=reduce?8:28;
+  for(var i=0;i<n;i++){setTimeout(launch,i*120)}
+  if(!reduce){setInterval(launch,700)}
+</script>
+</body>
+</html>
